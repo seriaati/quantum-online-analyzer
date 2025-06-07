@@ -1,0 +1,9 @@
+{
+    "apps": [
+        {
+            "name": "quantum-online-analyzer",
+            "script": "./main.py",
+            "interpreter": "./.venv/bin/python"
+        }
+    ]
+}
