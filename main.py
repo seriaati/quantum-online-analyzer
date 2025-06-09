@@ -45,6 +45,7 @@ class DataFramePaginator(discord.ui.View):
         self.page_size = 30
 
         row_strs = df.to_string(index=False, header=False).split("\n")
+        row_strs = [f"{i + 1:>3} {row}" for i, row in enumerate(row_strs)]
         self.pages = [
             row_strs[i : i + self.page_size]
             for i in range(0, len(row_strs), self.page_size)
