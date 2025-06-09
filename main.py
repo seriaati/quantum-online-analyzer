@@ -49,7 +49,7 @@ async def analyze_command(
         await i.response.send_message("沒有找到符合條件的資料。", ephemeral=True)
         return
 
-    df = df.sort_values("Date")
+    df = df.sort_values("Code")
     df = df.reset_index(drop=True)
     df_str = df.to_string(index=False, header=False)
     await i.followup.send(content=df_str)
@@ -63,7 +63,9 @@ bot = commands.Bot(command_prefix=commands.when_mentioned, intents=intents)
 @discord.app_commands.rename(file="檔案", days="天數")
 @discord.app_commands.describe(file="要分析的 Excel 檔案", days="要取距離今天的天數")
 async def analyze_etd(
-    i: discord.Interaction, file: discord.Attachment, days: int = 500
+    i: discord.Interaction,
+    file: discord.Attachment,
+    days: discord.app_commands.Range[int, 365, 1000] = 500,
 ) -> None:
     await analyze_command(i, file, days, type="etd")
 
@@ -72,7 +74,9 @@ async def analyze_etd(
 @discord.app_commands.rename(file="檔案", days="天數")
 @discord.app_commands.describe(file="要分析的 Excel 檔案", days="要取距離今天的天數")
 async def analyze_special(
-    i: discord.Interaction, file: discord.Attachment, days: int = 500
+    i: discord.Interaction,
+    file: discord.Attachment,
+    days: discord.app_commands.Range[int, 365, 1000] = 500,
 ) -> None:
     await analyze_command(i, file, days, type="special")
 
