@@ -1,6 +1,7 @@
 import asyncio
 import io
 import os
+from typing import Literal
 import discord
 from discord.ext import commands
 
@@ -10,7 +11,9 @@ import pandas as pd
 load_dotenv()
 
 
-def analyze_excel(file: bytes, days: int) -> pd.DataFrame:
+def analyze_excel(
+    file: bytes, days: int, *, type: Literal["etd", "special"]
+) -> pd.DataFrame:
     df = pd.read_excel(io.BytesIO(file))
 
     filtered = df[["tablescraper-selected-row 3", "tablescraper-selected-row 10"]]
@@ -21,6 +24,9 @@ def analyze_excel(file: bytes, days: int) -> pd.DataFrame:
     filtered = filtered[filtered["Date"] != "Call Date"]
     filtered["Date"] = filtered["Date"].str.replace(r"\s+", " ", regex=True).str.strip()
     filtered["Date"] = filtered["Date"].str.replace("n.a.", "").str.strip()
+    if type == "special":
+        filtered["Date"] = filtered["Date"].str.replace("None", "").str.strip()
+
     filtered["Date"] = pd.to_datetime(filtered["Date"], errors="coerce")
     filtered = filtered[filtered["Date"].notna()]
 
@@ -31,18 +37,14 @@ def analyze_excel(file: bytes, days: int) -> pd.DataFrame:
     return filtered
 
 
-intents = discord.Intents.default()
-bot = commands.Bot(command_prefix=commands.when_mentioned, intents=intents)
-
-
-@bot.tree.command(name="分析", description="獲取距離今天指定天數內的資料")
-@discord.app_commands.rename(file="檔案", days="天數")
-@discord.app_commands.describe(file="要分析的 Excel 檔案", days="要取距離今天的天數")
-async def analyze(
-    i: discord.Interaction, file: discord.Attachment, days: int = 500
+async def analyze_command(
+    i: discord.Interaction,
+    file: discord.Attachment,
+    days: int = 500,
+    type: Literal["etd", "special"] = "etd",
 ) -> None:
     await i.response.defer()
-    df = await asyncio.to_thread(analyze_excel, await file.read(), days)
+    df = await asyncio.to_thread(analyze_excel, await file.read(), days, type=type)
     if df.empty:
         await i.response.send_message("沒有找到符合條件的資料。", ephemeral=True)
         return
@@ -51,6 +53,28 @@ async def analyze(
     df = df.reset_index(drop=True)
     df_str = df.to_string(index=False, header=False)
     await i.followup.send(content=df_str)
+
+
+intents = discord.Intents.default()
+bot = commands.Bot(command_prefix=commands.when_mentioned, intents=intents)
+
+
+@bot.tree.command(name="分析etd", description="獲取距離今天指定天數內的 ETD")
+@discord.app_commands.rename(file="檔案", days="天數")
+@discord.app_commands.describe(file="要分析的 Excel 檔案", days="要取距離今天的天數")
+async def analyze_etd(
+    i: discord.Interaction, file: discord.Attachment, days: int = 500
+) -> None:
+    await analyze_command(i, file, days, type="etd")
+
+
+@bot.tree.command(name="分析特別股", description="獲取距離今天指定天數內的特別股")
+@discord.app_commands.rename(file="檔案", days="天數")
+@discord.app_commands.describe(file="要分析的 Excel 檔案", days="要取距離今天的天數")
+async def analyze_special(
+    i: discord.Interaction, file: discord.Attachment, days: int = 500
+) -> None:
+    await analyze_command(i, file, days, type="special")
 
 
 @commands.is_owner()
