@@ -61,13 +61,15 @@ class DataFramePaginator(discord.ui.View):
     @discord.ui.button(label="上一頁", style=discord.ButtonStyle.primary)
     async def previous_page(self, i: discord.Interaction, _: discord.ui.Button):
         self.page -= 1
-        self.page = max(self.page, 0)
+        if self.page < 0:
+            self.page = len(self.pages) - 1
         await self._update_message(i)
 
     @discord.ui.button(label="下一頁", style=discord.ButtonStyle.primary)
     async def next_page(self, i: discord.Interaction, _: discord.ui.Button):
         self.page += 1
-        self.page = min(self.page, len(self.pages) - 1)
+        if self.page >= len(self.pages):
+            self.page = 0
         await self._update_message(i)
 
 
