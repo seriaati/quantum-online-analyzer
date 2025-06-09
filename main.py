@@ -47,10 +47,12 @@ class DataFramePaginator(discord.ui.View):
         row_strs = df.to_string(index=False, header=False).split("\n")
         self.pages = itertools.batched(row_strs, 30)
 
+    @property
+    def page_content(self) -> str:
+        return "\n".join(self.pages[self.page])
+
     async def _update_message(self, i: discord.Interaction):
-        await i.response.edit_message(
-            content="\n".join(self.pages[self.page]), view=self
-        )
+        await i.response.edit_message(content=self.page_content, view=self)
 
     @discord.ui.button(label="上一頁", style=discord.ButtonStyle.primary)
     async def previous_page(self, i: discord.Interaction, _: discord.ui.Button):
@@ -80,7 +82,7 @@ async def analyze_command(
     df = df.sort_values("Code")
     df = df.reset_index(drop=True)
     paginator = DataFramePaginator(df)
-    await i.followup.send(view=paginator)
+    await i.followup.send(content=paginator.page_content, view=paginator)
 
 
 intents = discord.Intents.default()
