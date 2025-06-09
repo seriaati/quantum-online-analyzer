@@ -1,6 +1,5 @@
 import asyncio
 import io
-import itertools
 import os
 from typing import Literal
 import discord
@@ -43,9 +42,13 @@ class DataFramePaginator(discord.ui.View):
         super().__init__(timeout=None)
         self.df = df
         self.page = 0
+        self.page_size = 30
 
         row_strs = df.to_string(index=False, header=False).split("\n")
-        self.pages = itertools.batched(row_strs, 30)
+        self.pages = [
+            row_strs[i : i + self.page_size]
+            for i in range(0, len(row_strs), self.page_size)
+        ]
 
     @property
     def page_content(self) -> str:
