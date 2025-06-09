@@ -1,5 +1,6 @@
 import asyncio
 import io
+import itertools
 import os
 from typing import Literal
 import discord
@@ -37,6 +38,33 @@ def analyze_excel(
     return filtered
 
 
+class DataFramePaginator(discord.ui.View):
+    def __init__(self, df: pd.DataFrame):
+        super().__init__(timeout=None)
+        self.df = df
+        self.page = 0
+
+        row_strs = df.to_string(index=False, header=False).split("\n")
+        self.pages = itertools.batched(row_strs, 30)
+
+    async def _update_message(self, i: discord.Interaction):
+        await i.response.edit_message(
+            content="\n".join(self.pages[self.page]), view=self
+        )
+
+    @discord.ui.button(label="上一頁", style=discord.ButtonStyle.primary)
+    async def previous_page(self, i: discord.Interaction, _: discord.ui.Button):
+        self.page -= 1
+        self.page = max(self.page, 0)
+        await self._update_message(i)
+
+    @discord.ui.button(label="下一頁", style=discord.ButtonStyle.primary)
+    async def next_page(self, i: discord.Interaction, _: discord.ui.Button):
+        self.page += 1
+        self.page = min(self.page, len(self.pages) - 1)
+        await self._update_message(i)
+
+
 async def analyze_command(
     i: discord.Interaction,
     file: discord.Attachment,
@@ -51,8 +79,8 @@ async def analyze_command(
 
     df = df.sort_values("Code")
     df = df.reset_index(drop=True)
-    df_str = df.to_string(index=False, header=False)
-    await i.followup.send(content=df_str)
+    paginator = DataFramePaginator(df)
+    await i.followup.send(view=paginator)
 
 
 intents = discord.Intents.default()
