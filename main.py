@@ -112,7 +112,10 @@ async def analyze_etd(
     file: discord.Attachment,
     days: discord.app_commands.Range[int, 365, 1000] = 500,
 ) -> None:
-    await analyze_command(i, file, days, type="etd")
+    try:
+        await analyze_command(i, file, days, type="etd")
+    except Exception as e:
+        await i.response.send_message(f"發生錯誤: {str(e)}", ephemeral=True)
 
 
 @bot.tree.command(name="分析特別股", description="獲取距離今天指定天數內的特別股")
@@ -123,7 +126,10 @@ async def analyze_special(
     file: discord.Attachment,
     days: discord.app_commands.Range[int, 365, 1000] = 500,
 ) -> None:
-    await analyze_command(i, file, days, type="special")
+    try:
+        await analyze_command(i, file, days, type="special")
+    except Exception as e:
+        await i.response.send_message(f"發生錯誤: {str(e)}", ephemeral=True)
 
 
 @commands.is_owner()
