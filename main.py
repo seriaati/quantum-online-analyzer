@@ -16,12 +16,21 @@ def analyze_excel(
 ) -> pd.DataFrame:
     df = pd.read_excel(io.BytesIO(file))
 
-    filtered = df[["tablescraper-selected-row 3", "tablescraper-selected-row 10"]]
+    if type == "etd":
+        filtered = df[["tablescraper-selected-row 3", "tablescraper-selected-row 4"]]
+    else:
+        filtered = df[["tablescraper-selected-row 3", "tablescraper-selected-row 10"]]
+
     filtered.columns = ["Code", "Date"]
     filtered = filtered[filtered["Code"].notna()]
     filtered = filtered[filtered["Date"].notna()]
+
     filtered = filtered[filtered["Code"] != "Security Description"]
     filtered = filtered[filtered["Date"] != "Call Date"]
+    filtered = filtered[filtered["Date"] != "ALL"]
+    filtered = filtered[filtered["Date"] != "StockExchange"]
+
+    filtered["Date"] = filtered["Date"].str.replace("Call Date:", "").str.strip()
     filtered["Date"] = filtered["Date"].str.replace(r"\s+", " ", regex=True).str.strip()
     filtered["Date"] = filtered["Date"].str.replace("n.a.", "").str.strip()
     if type == "special":
