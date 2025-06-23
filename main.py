@@ -133,4 +133,5 @@ async def sync(ctx: commands.Context) -> None:
     await ctx.send("Commands synced successfully!")
 
 
-bot.run(os.getenv("TOKEN"))
+if __name__ == "__main__":
+    bot.run(os.getenv("TOKEN"))
