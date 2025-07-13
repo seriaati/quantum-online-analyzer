@@ -150,7 +150,7 @@ async def analyze_etd(
             i, file, type="etd", days=days, start_day=start_day, end_day=end_day
         )
     except Exception as e:
-        await i.response.send_message(f"發生錯誤: {str(e)}", ephemeral=True)
+        await i.followup.send(f"發生錯誤: {str(e)}", ephemeral=True)
 
 
 @bot.tree.command(name="分析特別股", description="獲取距離今天指定天數內的特別股")
