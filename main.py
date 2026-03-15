@@ -29,9 +29,15 @@ def analyze_excel(
 
     df = pd.read_excel(io.BytesIO(file))
 
-    filtered = df[["tablescraper-selected-row 3", "tablescraper-selected-row 10"]]
+    filtered = df[
+        [
+            "tablescraper-selected-row 3",
+            "tablescraper-selected-row 10",
+            "tablescraper-selected-row 4",
+        ]
+    ]
 
-    filtered.columns = ["Code", "Date"]
+    filtered.columns = ["Code", "Date", "Security Description"]
     filtered = filtered[filtered["Code"].notna()]
     filtered = filtered[filtered["Date"].notna()]
 
