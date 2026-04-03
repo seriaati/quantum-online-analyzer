@@ -67,42 +67,6 @@ def analyze_excel(
     return filtered
 
 
-class DataFramePaginator(discord.ui.View):
-    def __init__(self, df: pd.DataFrame):
-        super().__init__(timeout=None)
-        self.df = df
-        self.page = 0
-        self.page_size = 30
-
-        row_strs = df.to_string(index=False, header=False).split("\n")
-        row_strs = [f"{i + 1}. {row}" for i, row in enumerate(row_strs)]
-        self.pages = [
-            row_strs[i : i + self.page_size]
-            for i in range(0, len(row_strs), self.page_size)
-        ]
-
-    @property
-    def page_content(self) -> str:
-        return "\n".join(self.pages[self.page])
-
-    async def _update_message(self, i: discord.Interaction):
-        await i.response.edit_message(content=self.page_content, view=self)
-
-    @discord.ui.button(label="上一頁", style=discord.ButtonStyle.primary)
-    async def previous_page(self, i: discord.Interaction, _: discord.ui.Button):
-        self.page -= 1
-        if self.page < 0:
-            self.page = len(self.pages) - 1
-        await self._update_message(i)
-
-    @discord.ui.button(label="下一頁", style=discord.ButtonStyle.primary)
-    async def next_page(self, i: discord.Interaction, _: discord.ui.Button):
-        self.page += 1
-        if self.page >= len(self.pages):
-            self.page = 0
-        await self._update_message(i)
-
-
 async def analyze_command(
     i: discord.Interaction,
     file: discord.Attachment,
@@ -121,13 +85,20 @@ async def analyze_command(
         end_day=end_day,
     )
     if df.empty:
-        await i.response.send_message("沒有找到符合條件的資料", ephemeral=True)
+        await i.followup.send("沒有找到符合條件的資料", ephemeral=True)
         return
 
     df = df.sort_values("Code")
     df = df.reset_index(drop=True)
-    paginator = DataFramePaginator(df)
-    await i.followup.send(content=paginator.page_content, view=paginator)
+
+    row_strs = df.to_string(index=False, header=False).split("\n")
+    content = "\n".join(f"{idx + 1}. {row}" for idx, row in enumerate(row_strs))
+
+    txt_file = discord.File(
+        fp=io.BytesIO(content.encode("utf-8")),
+        filename="results.txt",
+    )
+    await i.followup.send(file=txt_file)
 
 
 intents = discord.Intents.default()
