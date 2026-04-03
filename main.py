@@ -15,17 +15,11 @@ load_dotenv()
 def analyze_excel(
     file: bytes,
     *,
-    type: Literal["etd", "special"],
-    days: Optional[int] = None,
-    start_day: Optional[int] = None,
-    end_day: Optional[int] = None,
+    start_day: int = None,
+    end_day: int = None,
 ) -> pd.DataFrame:
-    if days is None and (start_day is None or end_day is None):
-        raise ValueError("需要提供 'days' 或 'start_day' 和 'end_day' 其中之一")
-    if days is not None and (start_day is not None or end_day is not None):
-        raise ValueError("不能同時提供 'days' 和 'start_day'/'end_day'")
-    if start_day is not None and end_day is not None and start_day > end_day:
-        raise ValueError("start_day 不能大於 end_day")
+    if start_day > end_day:
+        raise ValueError("起始天數不能大於結束天數")
 
     df = pd.read_excel(io.BytesIO(file))
 
@@ -53,12 +47,8 @@ def analyze_excel(
     filtered = filtered[filtered["Date"].notna()]
 
     now = pd.Timestamp.now()
-    if days is not None:
-        start_date = now
-        end_date = now + pd.Timedelta(days=days)
-    else:  # start_day and end_day are not None
-        start_date = now + pd.Timedelta(days=start_day)
-        end_date = now + pd.Timedelta(days=end_day)
+    start_date = now + pd.Timedelta(days=start_day)
+    end_date = now + pd.Timedelta(days=end_day)
 
     filtered = filtered[
         (filtered["Date"] >= start_date) & (filtered["Date"] <= end_date)
@@ -70,17 +60,13 @@ def analyze_excel(
 async def analyze_command(
     i: discord.Interaction,
     file: discord.Attachment,
-    days: Optional[int],
     start_day: Optional[int],
     end_day: Optional[int],
-    type: Literal["etd", "special"] = "etd",
 ) -> None:
     await i.response.defer()
     df = await asyncio.to_thread(
         analyze_excel,
         await file.read(),
-        type=type,
-        days=days,
         start_day=start_day,
         end_day=end_day,
     )
@@ -131,26 +117,20 @@ async def analyze_etd(
 
 
 @bot.tree.command(name="分析特別股", description="獲取距離今天指定天數內的特別股")
-@discord.app_commands.rename(
-    file="檔案", days="天數", start_day="起始天數", end_day="結束天數"
-)
+@discord.app_commands.rename(file="檔案", start_day="起始天數", end_day="結束天數")
 @discord.app_commands.describe(
     file="要分析的 Excel 檔案",
-    days="要取距離今天的天數",
     start_day="起始天數要取距離今天幾天",
     end_day="結束天數要取距離今天幾天",
 )
 async def analyze_special(
     i: discord.Interaction,
     file: discord.Attachment,
-    days: Optional[discord.app_commands.Range[int, 365, 1000]] = None,
     start_day: Optional[int] = None,
     end_day: Optional[int] = None,
 ) -> None:
     try:
-        await analyze_command(
-            i, file, type="special", days=days, start_day=start_day, end_day=end_day
-        )
+        await analyze_command(i, file, start_day=start_day, end_day=end_day)
     except Exception as e:
         await i.response.send_message(f"發生錯誤: {str(e)}", ephemeral=True)
 
