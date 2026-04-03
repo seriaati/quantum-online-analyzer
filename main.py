@@ -60,8 +60,8 @@ def analyze_excel(
 async def analyze_command(
     i: discord.Interaction,
     file: discord.Attachment,
-    start_day: Optional[int],
-    end_day: Optional[int],
+    start_day: int,
+    end_day: int,
 ) -> None:
     await i.response.defer()
     df = await asyncio.to_thread(
@@ -92,26 +92,20 @@ bot = commands.Bot(command_prefix=commands.when_mentioned, intents=intents)
 
 
 @bot.tree.command(name="分析etd", description="獲取距離今天指定天數內的 ETD")
-@discord.app_commands.rename(
-    file="檔案", days="天數", start_day="起始天數", end_day="結束天數"
-)
+@discord.app_commands.rename(file="檔案", start_day="起始天數", end_day="結束天數")
 @discord.app_commands.describe(
     file="要分析的 Excel 檔案",
-    days="要取距離今天的天數",
     start_day="起始天數要取距離今天幾天",
     end_day="結束天數要取距離今天幾天",
 )
 async def analyze_etd(
     i: discord.Interaction,
     file: discord.Attachment,
-    days: Optional[discord.app_commands.Range[int, 365, 1000]] = None,
-    start_day: Optional[int] = None,
-    end_day: Optional[int] = None,
+    start_day: int,
+    end_day: int,
 ) -> None:
     try:
-        await analyze_command(
-            i, file, type="etd", days=days, start_day=start_day, end_day=end_day
-        )
+        await analyze_command(i, file, start_day=start_day, end_day=end_day)
     except Exception as e:
         await i.followup.send(f"發生錯誤: {str(e)}", ephemeral=True)
 
@@ -126,8 +120,8 @@ async def analyze_etd(
 async def analyze_special(
     i: discord.Interaction,
     file: discord.Attachment,
-    start_day: Optional[int] = None,
-    end_day: Optional[int] = None,
+    start_day: int,
+    end_day: int,
 ) -> None:
     try:
         await analyze_command(i, file, start_day=start_day, end_day=end_day)
